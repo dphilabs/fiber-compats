@@ -1,0 +1,55 @@
+{
+  "Version": "1.0",
+  "StartAt": "Plan_Wire_Cerebras",
+  "States": {
+    "Plan_Wire_Cerebras": {
+      "Type": "Task",
+      "Resource": "llm://cerebras/qwen-3.8-27b",
+      "Parameters": {
+        "prompt": "Calculate wire transfer amount and dispatch parallel verification.",
+        "__fiber_extensions": {
+          "Projection": { "extract_keys": ["$.computed_amount", "$.intent_type"] }
+        }
+      },
+      "Next": ["Legacy_REST_Branch", "Local_Binary_Branch"]
+    },
+    "Legacy_REST_Branch": {
+      "Type": "Task",
+      "Resource": "https://api.erp.internal/v1/commit",
+      "Parameters": {
+        "wire_amount.$": "$.computed_amount",
+        "__fiber_extensions": {
+          "Projection": { "extract_keys": ["$.rest_status", "$._score"] }
+        }
+      },
+      "Next": "Converge_Choice",
+      "Catch": "Converge_Choice"
+    },
+    "Local_Binary_Branch": {
+      "Type": "Task",
+      "Resource": "exec://python3 -c \"import sys, json; d = json.loads(sys.stdin.read()); print(json.dumps({'bin_verified': True, '_score': 0.82, 'step_cost': 8}))\"",
+      "Parameters": { "check_amount.$": "$.computed_amount" },
+      "Next": "Converge_Choice",
+      "Catch": "Converge_Choice"
+    },
+    "Converge_Choice": {
+      "Type": "Choice",
+      "Choices": [
+        { "if": "$._score >= 0.95", "Next": "Local_Reflect_LlamaServer" }
+      ],
+      "Default": "Success_End"
+    },
+    "Local_Reflect_LlamaServer": {
+      "Type": "Task",
+      "Resource": "reflect://llama_server/gemma-3-1b-it-Q4_K_M.gguf",
+      "Parameters": {
+        "prompt": "Audit final settled transaction state locally.",
+        "__fiber_extensions": {
+          "Projection": { "extract_keys": ["$.local_gguf_audit"] }
+        }
+      },
+      "Next": "Success_End"
+    },
+    "Success_End": { "Type": "Succeed" }
+  }
+}
