@@ -1,0 +1,101 @@
+{
+  "Version": "1.0",
+  "StartAt": "Seed_Multiverse_Intent",
+  "States": {
+    "Seed_Multiverse_Intent": {
+      "Type": "Task",
+      "Resource": "fn://seed_intent",
+      "Parameters": {
+        "symbol": "BTCUSD",
+        "base_amount": 250,
+        "multiplier": 4,
+        "__fiber_extensions": {
+          "Projection": {
+            "extract_keys": ["$.expr_str", "$.raw_price", "$.raw_amount", "$._fork_ratios"]
+          }
+        }
+      },
+      "Next": [
+        "BranchA_FinLib_Math",
+        "BranchB_Guarded_Order",
+        "BranchC_Underfunded_Search"
+      ]
+    },
+    "BranchA_FinLib_Math": {
+      "Type": "Task",
+      "Resource": "mcp://worker.eco.finlib/eval_math",
+      "Parameters": {
+        "expression.$": "$.expr_str",
+        "__fiber_extensions": {
+          "Projection": {
+            "extract_keys": ["$.math_value", "$._score"]
+          }
+        }
+      },
+      "Next": "Converge_Choice"
+    },
+    "BranchB_Guarded_Order": {
+      "Type": "Task",
+      "Resource": "mcp://worker.eco.finlib/normalize_order",
+      "Parameters": {
+        "symbol": "BTCUSD",
+        "raw_price.$": "$.raw_price",
+        "raw_amount.$": "$.raw_amount",
+        "__fiber_extensions": {
+          "Projection": {
+            "extract_keys": ["$.normalized_price", "$._score"]
+          }
+        }
+      },
+      "Next": "Converge_Choice"
+    },
+    "BranchC_Underfunded_Search": {
+      "Type": "Task",
+      "Resource": "mcp://worker.search.archive/search_market_evidence",
+      "Parameters": {
+        "domain": "Domain_1_Control_Failure",
+        "limit": 1,
+        "_fuel_receipt": "invalid_receipt"
+      },
+      "Next": "Converge_Choice",
+      "Catch": "BranchC_Exec_Fallback"
+    },
+    "BranchC_Exec_Fallback": {
+      "Type": "Task",
+      "Resource": "exec://python3 -c \"import sys, json; d = json.loads(sys.stdin.read()); print(json.dumps({'fallback_recovered': True, 'degraded_mode': 'CACHE_ONLY', '_score': 0.85, 'step_cost': 3}))\"",
+      "Parameters": {
+        "failed_node": "BranchC_Underfunded_Search"
+      },
+      "Next": "Converge_Choice"
+    },
+    "Converge_Choice": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "if": "$._score >= 0.90",
+          "Next": "Finalize_Audit_Fn"
+        }
+      ],
+      "Default": "Fail_End"
+    },
+    "Finalize_Audit_Fn": {
+      "Type": "Task",
+      "Resource": "fn://audit_convergence",
+      "Parameters": {
+        "settled_price.$": "$.normalized_price",
+        "__fiber_extensions": {
+          "Projection": {
+            "extract_keys": ["$.convergence_verified", "$._score"]
+          }
+        }
+      },
+      "Next": "Success_End"
+    },
+    "Success_End": {
+      "Type": "Succeed"
+    },
+    "Fail_End": {
+      "Type": "Fail"
+    }
+  }
+}
