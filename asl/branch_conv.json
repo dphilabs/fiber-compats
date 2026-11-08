@@ -11,7 +11,12 @@
         "multiplier": 4,
         "__fiber_extensions": {
           "Projection": {
-            "extract_keys": ["$.expr_str", "$.raw_price", "$.raw_amount", "$._fork_ratios"]
+            "extract_keys": [
+              "$.expr_str",
+              "$.raw_price",
+              "$.raw_amount",
+              "$._fork_ratios"
+            ]
           }
         }
       },
@@ -28,11 +33,15 @@
         "expression.$": "$.expr_str",
         "__fiber_extensions": {
           "Projection": {
-            "extract_keys": ["$.math_value", "$._score"]
+            "extract_keys": [
+              "$.math_value",
+              "$._score"
+            ]
           }
         }
       },
-      "Next": "Converge_Choice"
+      "Next": "Converge_Choice",
+      "Catch": "BranchC_Exec_Fallback"
     },
     "BranchB_Guarded_Order": {
       "Type": "Task",
@@ -43,11 +52,15 @@
         "raw_amount.$": "$.raw_amount",
         "__fiber_extensions": {
           "Projection": {
-            "extract_keys": ["$.normalized_price", "$._score"]
+            "extract_keys": [
+              "$.normalized_price",
+              "$._score"
+            ]
           }
         }
       },
-      "Next": "Converge_Choice"
+      "Next": "Converge_Choice",
+      "Catch": "BranchC_Exec_Fallback"
     },
     "BranchC_Underfunded_Search": {
       "Type": "Task",
@@ -85,7 +98,10 @@
         "settled_price.$": "$.normalized_price",
         "__fiber_extensions": {
           "Projection": {
-            "extract_keys": ["$.convergence_verified", "$._score"]
+            "extract_keys": [
+              "$.convergence_verified",
+              "$._score"
+            ]
           }
         }
       },
