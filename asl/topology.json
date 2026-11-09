@@ -1,0 +1,100 @@
+{
+  "Version": "1.0",
+  "StartAt": "Preflight_Source",
+  "States": {
+    "Preflight_Source": {
+      "Type": "Task",
+      "Resource": "py://phase.ops.web.auditor:preflight_source",
+      "Parameters": {
+        "domain": "dphilabs.com",
+        "__fiber_extensions": {
+          "Projection": {
+            "extract_keys": ["$.pages_repo", "$.domain", "$._score"]
+          }
+        }
+      },
+      "Next": "Synthesize_Site",
+      "Catch": "Auto_Heal_Source"
+    },
+    "Auto_Heal_Source": {
+      "Type": "Task",
+      "Resource": "exec://python3 -m phase.ops.web.synth fix",
+      "Parameters": {
+        "failed_node": "Preflight_Source"
+      },
+      "Next": "Synthesize_Site"
+    },
+    "Synthesize_Site": {
+      "Type": "Task",
+      "Resource": "exec://python3 -m phase.ops.web.synth sync",
+      "Parameters": {
+        "domain.$": "$.domain",
+        "__fiber_extensions": {
+          "Projection": {
+            "extract_keys": ["$.pages_repo", "$._score"]
+          }
+        }
+      },
+      "Next": "Audit_Static_DOM"
+    },
+    "Audit_Static_DOM": {
+      "Type": "Task",
+      "Resource": "py://phase.ops.web.auditor:audit_static_dom",
+      "Parameters": {
+        "pages_repo.$": "$.pages_repo",
+        "__fiber_extensions": {
+          "Projection": {
+            "extract_keys": ["$.dom_passed", "$.checked_links", "$._score"]
+          }
+        }
+      },
+      "Next": "Probe_Dynamic_SPA",
+      "Catch": "Fail_End"
+    },
+    "Probe_Dynamic_SPA": {
+      "Type": "Task",
+      "Resource": "mcp://worker.web.probe/probe_spa",
+      "Parameters": {
+        "pages_repo.$": "$.pages_repo",
+        "max_samples": 12,
+        "__fiber_extensions": {
+          "Projection": {
+            "extract_keys": ["$.spa_probe_passed", "$.tested_routes", "$._score"]
+          }
+        }
+      },
+      "Next": "Evaluate_Audit_Gate",
+      "Catch": "Fail_End"
+    },
+    "Evaluate_Audit_Gate": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "if": "$._score >= 1.0",
+          "Next": "Publish_Pages_Gate"
+        }
+      ],
+      "Default": "Fail_End"
+    },
+    "Publish_Pages_Gate": {
+      "Type": "Task",
+      "Resource": "mcp://worker.web.probe/publish_pages",
+      "Parameters": {
+        "pages_repo.$": "$.pages_repo",
+        "commit_msg": "chore: sync verified fiber docs",
+        "__fiber_extensions": {
+          "Projection": {
+            "extract_keys": ["$.published", "$.commit_sha", "$._score"]
+          }
+        }
+      },
+      "Next": "Success_End"
+    },
+    "Success_End": {
+      "Type": "Succeed"
+    },
+    "Fail_End": {
+      "Type": "Fail"
+    }
+  }
+}
