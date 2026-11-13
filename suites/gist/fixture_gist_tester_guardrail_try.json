@@ -1,0 +1,107 @@
+{
+  "scenario": "tester_guardrail_try",
+  "latest_trace_id": "ce80d4a2b9e1b2a0cf6d888742abe20d",
+  "history_keys": [
+    "ce80d4a2b9e1b2a0cf6d888742abe20d"
+  ],
+  "traces": {
+    "ce80d4a2b9e1b2a0cf6d888742abe20d": {
+      "trace_id": "ce80d4a2b9e1b2a0cf6d888742abe20d",
+      "request_context": {
+        "model": "claude-haiku-4-5-20251001",
+        "provider": "anthropic",
+        "messages": [
+          {
+            "role": "user",
+            "content": "My phone is <redacted>. Say 'Received'."
+          }
+        ],
+        "parameters": {
+          "temperature": null,
+          "max_tokens": null,
+          "stream": true
+        }
+      },
+      "network_metrics": {
+        "ttfb_ms": 180.0,
+        "total_duration_ms": 320.0
+      },
+      "response_timeline": [
+        {
+          "delta_ms": 180.0,
+          "chunk": "Received."
+        },
+        {
+          "delta_ms": 120.0,
+          "chunk": " (Phone number masked in-flight prior to model I/O.)"
+        },
+        {
+          "delta_ms": 20.0,
+          "chunk": "",
+          "finish_reason": "end_turn"
+        }
+      ],
+      "exception_boundary": {
+        "occurred": false
+      },
+      "usage": {
+        "prompt_tokens": 16,
+        "completion_tokens": 14,
+        "total_tokens": 30
+      },
+      "raw_payload": {
+        "stream_chunks": [
+          {
+            "id": "chatcmpl-ce80d4a2",
+            "object": "chat.completion.chunk",
+            "model": "claude-haiku-4-5-20251001",
+            "choices": [
+              {
+                "index": 0,
+                "delta": {
+                  "role": "assistant",
+                  "content": "Received."
+                },
+                "finish_reason": null
+              }
+            ]
+          },
+          {
+            "id": "chatcmpl-ce80d4a2",
+            "object": "chat.completion.chunk",
+            "model": "claude-haiku-4-5-20251001",
+            "choices": [
+              {
+                "index": 0,
+                "delta": {
+                  "role": "assistant",
+                  "content": " (Phone number masked in-flight prior to model I/O.)"
+                },
+                "finish_reason": null
+              }
+            ]
+          },
+          {
+            "id": "chatcmpl-ce80d4a2",
+            "object": "chat.completion.chunk",
+            "model": "claude-haiku-4-5-20251001",
+            "choices": [
+              {
+                "index": 0,
+                "delta": {
+                  "role": "assistant"
+                },
+                "finish_reason": "end_turn"
+              }
+            ],
+            "usage": {
+              "prompt_tokens": 16,
+              "completion_tokens": 14,
+              "total_tokens": 30
+            }
+          }
+        ]
+      }
+    }
+  }
+}
